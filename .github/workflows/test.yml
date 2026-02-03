@@ -35,6 +35,7 @@ jobs:
       DB_HOST: localhost
       DB_PORT: 5432
       DB_NAME_TEST: im_back_test
+      FRONTEND_URLS: "http://localhost:5173,http://localhost:5174"
 
     steps:
       - name: Checkout code
