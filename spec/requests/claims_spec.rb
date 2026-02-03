@@ -277,7 +277,7 @@ RSpec.describe ClaimsController, type: :request do
     let(:coverage_type) { create(:coverage_type) }
     let(:insurance_product) { create(:insurance_product, insurer: insurer_user.insurer, coverage_type: coverage_type) }
     let(:insurer_policy) { create(:policy, coverage_type: coverage_type) }
-    let(:claim) { create(:claim, :pending, policy: insurer_policy) }
+    let(:claim) { create(:claim, :pending, policy: insurer_policy, claimed_amount: 25000) }
 
     before do
       role = create(:role, name: 'insurer')
