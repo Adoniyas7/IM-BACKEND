@@ -6,8 +6,33 @@ on:
     branches: [main]
 
 jobs:
-  scan_ruby:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: im_back_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      RAILS_ENV: test
+      RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME_TEST: im_back_test
+      FRONTEND_URLS: "http://localhost:5173,http://localhost:5174"
 
     steps:
       - name: Checkout code
@@ -18,6 +43,19 @@ jobs:
         with:
           ruby-version: .ruby-version
           bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client libpq-dev
+
+      - name: Setup Database
+        run: |
+          bundle exec rails db:create
+          bundle exec rails db:schema:load
+
+      - name: Run tests
+        run: bundle exec rspec
 
   lint:
     runs-on: ubuntu-latest
@@ -31,15 +69,11 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Make Rubocop executable
-        run: chmod +x bin/rubocop
-
       - name: Lint code for consistent style
-        run: bin/rubocop -f github
+        run: bundle exec rubocop
 
   security:
     runs-on: ubuntu-latest
-    needs: scan_ruby
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,13 +84,10 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Make security tools executable
-        run: chmod +x bin/brakeman
-
       - name: Run Brakeman security scan
-        run: bin/brakeman --no-pager --quiet --format json || true
+        run: bundle exec brakeman --no-pager
 
       - name: Dependency vulnerability check
         run: |
           gem install bundler-audit
-          bundle audit check --update || true
+          bundle audit check --update
