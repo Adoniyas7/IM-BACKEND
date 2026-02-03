@@ -68,4 +68,4 @@ ENTRYPOINT ["/opt/app/bin/docker-entrypoint"]
 
 # Expose port and start server
 EXPOSE 3000
-CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
