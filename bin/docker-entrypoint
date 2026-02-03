@@ -6,18 +6,28 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
-# Wait for PostgreSQL to be ready
-until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME"; do
-    echo "Waiting for PostgreSQL to be ready at $DB_HOST:$DB_PORT..."
-    sleep 1
-done
-echo "PostgreSQL is ready!"
+# Wait for PostgreSQL to be ready (only if DB_HOST is set)
+if [ -n "$DB_HOST" ]; then
+    until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME"; do
+        echo "Waiting for PostgreSQL to be ready at $DB_HOST:$DB_PORT..."
+        sleep 1
+    done
+    echo "PostgreSQL is ready!"
+elif [ -n "$DATABASE_URL" ]; then
+    # Extract host from DATABASE_URL for pg_isready check
+    DB_HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:/]*\).*/\1/p')
+    until pg_isready -h "$DB_HOST" -U postgres 2>/dev/null || rails runner "ActiveRecord::Base.connection.execute('SELECT 1')" 2>/dev/null; do
+        echo "Waiting for PostgreSQL to be ready..."
+        sleep 2
+    done
+    echo "PostgreSQL is ready!"
+fi
 
-# Check if the command includes starting the Rails server
-if echo "$@" | grep -Eq "rails s|rails server|rails s -b"; then
-    echo "Preparing database..."
-    bundle exec rails db:prepare RAILS_ENV=development
-    echo "Database preparation complete!"
+# Run database migrations for production
+if [ "$RAILS_ENV" = "production" ]; then
+    echo "Running database migrations..."
+    bundle exec rails db:migrate
+    echo "Database migrations complete!"
 fi
 
 # Execute the original command
