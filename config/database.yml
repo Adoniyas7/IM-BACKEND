@@ -11,15 +11,15 @@ default: &default
 
 development:
   <<: *default
-  database: <%= ENV['DB_NAME_DEVELOPMENT'] %>
+  database: <%= ENV['DB_NAME_DEVELOPMENT'] || 'im_back_development' %>
 
 test:
   <<: *default
-  database: <%= ENV['DB_NAME_TEST'] %>
-
-test:
-  <<: *default
-  database: im_back_test
+  database: <%= ENV['DB_NAME_TEST'] || 'im_back_test' %>
+  username: <%= ENV['DB_USERNAME'] || 'postgres' %>
+  password: <%= ENV['DB_PASSWORD'] || 'postgres' %>
+  host: <%= ENV['DB_HOST'] || 'localhost' %>
+  port: <%= ENV['DB_PORT'] || 5432 %>
 
 production:
   primary: &primary_production
