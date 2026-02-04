@@ -68,3 +68,8 @@ jobs:
             done
             
             echo "⚠️ Deployment still in progress after ${max_wait}s. Check Render dashboard."
+            exit 0
+          else
+            echo "❌ Deployment failed with status $http_code"
+            exit 1
+          fi
